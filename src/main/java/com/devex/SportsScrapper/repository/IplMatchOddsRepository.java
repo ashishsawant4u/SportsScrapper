@@ -12,4 +12,6 @@ import com.devex.SportsScrapper.CricketMatchOddsModel;
 public interface IplMatchOddsRepository  extends MongoRepository<CricketMatchOddsModel, ObjectId>
 {
 	public List<CricketMatchOddsModel> findByMatchCode(String matchCode);
+	
+	public List<CricketMatchOddsModel> findByMatchCodeAndInningsAndOvers(String matchCode,String innings,String overs);
 }

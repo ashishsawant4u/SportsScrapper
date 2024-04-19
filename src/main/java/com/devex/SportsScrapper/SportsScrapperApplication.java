@@ -8,11 +8,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import com.devex.SportsScrapper.controller.IceExchangeController;
 
 import jakarta.annotation.PostConstruct;
 
+@EnableScheduling
 @EnableMongoAuditing
 @SpringBootApplication
 public class SportsScrapperApplication {

@@ -1,6 +1,7 @@
 package com.devex.SportsScrapper.controller;
 import static com.devex.SportsScrapper.common.SportsUtils.getMatchCode;
 import static com.devex.SportsScrapper.common.SportsUtils.isMatchTime;
+import static com.devex.SportsScrapper.common.SportsUtils.isOverComplete;
 import static com.devex.SportsScrapper.common.SportsUtils.isValidTeam;
 
 import java.time.Duration;
@@ -15,12 +16,14 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
 
 import com.devex.SportsScrapper.CricketMatchOddsModel;
 import com.devex.SportsScrapper.configuration.SportsPropertiesService;
 import com.devex.SportsScrapper.repository.IplMatchOddsRepository;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 
 @Controller
@@ -35,8 +38,21 @@ public class IceExchangeController
 	SportsPropertiesService sportsPropertiesService;
 	
 	//@PostConstruct
+	public void test()
+	{
+		System.out.println("isOverComplete "+isOverComplete(" 6.6/20 OV"));
+		System.out.println("isOverComplete "+isOverComplete(" 6.2/20 OV"));
+	}
+	
+	
+	//@PostConstruct
+	//cron expression for every day at 19:30
+	@Scheduled(cron = "0 30 19 * * *")
 	public void inPlayMatches()
 	{
+		// Create a new instance of the Chrome driver
+        WebDriver driver = null;
+        
 		try 
 		{
 
@@ -49,10 +65,12 @@ public class IceExchangeController
 
 				 ChromeOptions options = new ChromeOptions();
 			     options.addArguments("--headless");
-				 
-		        // Create a new instance of the Chrome driver
-		        WebDriver driver = new ChromeDriver();
-
+				 options.addArguments("--window-size=1920,1080");
+				 options.addArguments("--no-sandbox");
+				 options.addArguments("--disable-gpu");
+				 options.addArguments("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36");
+			     driver = new ChromeDriver(options);
+			     
 		        // Navigate to the webpage
 		        driver.get(url);
 		        
@@ -70,37 +88,67 @@ public class IceExchangeController
 		        
 		        log.info("allMatches.size() "+allMatches.size());
 		        
+		        boolean foundDesiredMatches = false;
+		        
 		        for(WebElement match : allMatches)
 		        {
 		        	String teams[] = match.getText().trim().split("V/S");
 		        	if(isValidTeam(teams[0]) || isValidTeam(teams[1]))
 		        	{
 		        		match.findElement(By.xpath("..")).click();
+		        		foundDesiredMatches = true;
 		        		break;
 		        	}
 		        }
 		        
-		        log.info("redirected to "+driver.getCurrentUrl());
-		        
-		        Thread.sleep(15000);
-		        
-		        while(isMatchTime())
+		        if(foundDesiredMatches)
 		        {
-		        	 matchDetails(driver);
-		        	 Thread.sleep(15000);
+		        	log.info("redirected to "+driver.getCurrentUrl());
+			        
+			        //wait for page to loaded fully
+			        Thread.sleep(15000);
+			        
+			        while(isMatchTime())
+			        {
+			        	CricketMatchOddsModel matchModel = matchDetails(driver);
+			        	//wait for next ball then call again matchDetails
+			        	Thread.sleep(20000);
+			        	 
+			        	 if(isOverComplete(matchModel.getOvers()))
+			        	 {
+			        		 log.info("Over Complete "+matchModel.getOvers()+" starting new session...");
+			        		 //start new browser session once over gets completed
+			        		driver.quit();
+			        		//wait for next over to start
+			        		Thread.sleep(20000);
+			        		inPlayMatches();
+			        	 }
+			        	 
+			        }
+			        
+			        // Close the browser once we are beyond match hours
+			        log.info("Closing browser as we are beyond match hours...");
+			        driver.quit();
 		        }
-		       
+		        else
+		        {
+		        	log.info("Did not found desired match, closing browser");
+		        	driver.quit();
+		        }
 		        
-		        // Close the browser
-		        driver.quit();
+		        
+		        
 			 }
 		
 		} catch (Exception e) {
 			log.info(e.getMessage());
+			log.info("something went wrong try again...");
+			driver.quit();
+			inPlayMatches();
 		}
 	}
 	
-	private void matchDetails(WebDriver driver) throws InterruptedException 
+	private CricketMatchOddsModel matchDetails(WebDriver driver) throws InterruptedException 
 	{
 		CricketMatchOddsModel matchModel = new CricketMatchOddsModel(); 
 		matchModel.setMatchCode(getMatchCode(driver.getCurrentUrl()));
@@ -121,8 +169,8 @@ public class IceExchangeController
 		        	 String inn[] = childDiv.getText().replace("\n", "").split("\\|");
 		        	 //log.info("INNING ===> "+inn[0]);
 		        	 //log.info("OVER ===> "+inn[1]);
-		        	 matchModel.setInnings(String.valueOf(inn[0]));
-		        	 matchModel.setOvers(String.valueOf(inn[1]));
+		        	 matchModel.setInnings(String.valueOf(inn[0]).trim());
+		        	 matchModel.setOvers(String.valueOf(inn[1]).trim());
 		        	 break;
 		        }
 		    }
@@ -190,8 +238,20 @@ public class IceExchangeController
 		    }
 		    matchModel.setLeague(sportsPropertiesService.getTeamsMappingAllProperties().get(matchModel.getTeam1Name()));
 		    
-		    log.info(matchModel.toString());
-		    iplMatchOddsRepository.save(matchModel);
+		    saveIfNotExist(matchModel);
+		    
+		    return matchModel;
+	}
+	
+	public void saveIfNotExist(CricketMatchOddsModel model)
+	{
+		List<CricketMatchOddsModel> existing = iplMatchOddsRepository.findByMatchCodeAndInningsAndOvers(model.getMatchCode(), model.getInnings(), model.getOvers());
+		
+		if(existing.isEmpty())
+		{
+			log.info(model.toString());
+			iplMatchOddsRepository.save(model);
+		}
 	}
 	
 	

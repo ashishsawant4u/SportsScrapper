@@ -11,7 +11,7 @@
 	<groupId>com.devex</groupId>
 	<artifactId>SportsScrapper</artifactId>
 	<version>v1</version>
-	<packaging>jar</packaging>
+	<packaging>war</packaging>
 	<name>SportsScrapper</name>
 	<description>Spots Scrapper</description>
 	<properties>
@@ -35,7 +35,6 @@
 			<scope>test</scope>
 		</dependency>
 		
-
 		<dependency>
 		    <groupId>org.seleniumhq.selenium</groupId>
 		    <artifactId>selenium-java</artifactId>

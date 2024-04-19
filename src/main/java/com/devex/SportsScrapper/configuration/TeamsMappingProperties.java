@@ -21,11 +21,10 @@ public class TeamsMappingProperties
 	}
 	
 	@Bean
-	public static PropertiesFactoryBean teamsMappingAllProperties() 
+	public PropertiesFactoryBean teamsMappingAllProperties() 
 	{
 	    PropertiesFactoryBean bean = new PropertiesFactoryBean();
 	    bean.setLocation(new ClassPathResource("teams-mapping.properties"));
 	    return bean;
 	}
-
 }

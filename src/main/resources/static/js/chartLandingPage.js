@@ -19,7 +19,7 @@ function toogleDataSeries(e){
 
 function getChartOddsData()
 {
-	
+	var matchcode = $("#cricketOddsChartContainer").data("matchcode");
 	var team1Back = [];
 	var team1Lay = [];
 	var team2Back = [];
@@ -29,10 +29,13 @@ function getChartOddsData()
 	//ajax call for GET method
 	$.ajax({
 		type: "GET",
-        url: "http://localhost:8047/chart/33181109",
+        url: cricketOddsChartViewUrl + matchcode,
         dataType: "json",
         success: function(data) {
             console.log(data.length);
+            
+            $("#matchTitle").text(data[0].team1Name + " v/s " + data[0].team2Name);
+            
             oddsData["team1Name"] = data[0].team1Name;
             oddsData["team2Name"] = data[0].team2Name;
             
@@ -90,12 +93,13 @@ function getChartOddsData()
 
 function prepareOddsChart(oddsData) 
 {
-	var chart = new CanvasJS.Chart("chartContainer", {
-	theme: "light1", // "light1", "light2", "dark1", "dark2"	
+	var chart = new CanvasJS.Chart("cricketOddsChartContainer", {
+	theme: "light2", // "light1", "light2", "dark1", "dark2"	
 	animationEnabled: true,	
 	zoomEnabled: true,	
+	zoomType: "xy",
 	title: {
-		text: "Odds Graph"
+		//text: "Odds Graph"
 	},
 	axisX: {
 		valueFormatString: "hh:mm:ss",
@@ -128,24 +132,26 @@ function prepareOddsChart(oddsData)
 		name: oddsData.team1Name+" Back",
 		showInLegend: true,
 		markerSize: 0,
+		lineThickness: 4,
 		dataPoints:  oddsData.team1Back
 	},
-	{
+	/*{
 		type: "line",
 		axisYType: "secondary",
 		name: oddsData.team1Name+" Lay",
 		showInLegend: true,
 		markerSize: 0,
 		dataPoints: oddsData.team1Lay
-	},
+	},*/
 	{
 		type: "line",
 		axisYType: "secondary",
 		name: oddsData.team2Name+" Back",
 		showInLegend: true,
 		markerSize: 0,
+		lineThickness: 4,
 		dataPoints: oddsData.team2Back
-	},
+	}/*,
 	{
 		type: "line",
 		axisYType: "secondary",
@@ -153,7 +159,7 @@ function prepareOddsChart(oddsData)
 		showInLegend: true,
 		markerSize: 0,
 		dataPoints: oddsData.team2Lay
-	}]
+	}*/]
 });
 chart.render();
 }

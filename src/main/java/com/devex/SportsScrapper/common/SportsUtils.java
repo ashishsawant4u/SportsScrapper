@@ -1,7 +1,5 @@
 package com.devex.SportsScrapper.common;
 
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Set;
@@ -55,12 +53,14 @@ public class SportsUtils
 		 
 		String timeToCheck = hr+":"+min; 
 
-        LocalTime givenTime = LocalTime.parse(timeToCheck, DateTimeFormatter.ofPattern("HH:mm"));
-
-        LocalTime startTime = LocalTime.of(13, 30); // 7:30 PM
-        LocalTime endTime = LocalTime.of(1, 0); // 1 AM
-
-        boolean isWithinRange = givenTime.isAfter(startTime) &&  !LocalTime.now().equals(LocalTime.MIDNIGHT);
+//        LocalTime givenTime = LocalTime.parse(timeToCheck, DateTimeFormatter.ofPattern("HH:mm"));
+//
+//        LocalTime startTime = LocalTime.of(13, 30); // 7:30 PM
+//        LocalTime endTime = LocalTime.of(1, 0); // 1 AM
+//
+//        boolean isWithinRange = givenTime.isAfter(startTime) &&  !LocalTime.now().equals(LocalTime.MIDNIGHT);
+		
+		 boolean isWithinRange = (Integer.parseInt(hr) < 23 || (Integer.parseInt(hr) == 23 && Integer.parseInt(min) <= 45));
         
         if(!isWithinRange)
         {
@@ -69,5 +69,16 @@ public class SportsUtils
         }
         
         return isWithinRange;
+	}
+	
+	public static boolean isOverComplete(String overs)
+	{
+		String currentOver = overs.split("\\/")[0];
+   	 	if(currentOver.endsWith(".6") || currentOver.endsWith(".0"))
+   	 	{
+   	 		return true;
+   	 	}
+   	 	
+   	 	return false;
 	}
 }

@@ -22,5 +22,7 @@
 
 <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
 
+<tags:javascriptVariables/>
+
 <link href="${contextPath}/css/style.css" rel="stylesheet">
 <script src="${contextPath}/js/chartLandingPage.js"></script>
