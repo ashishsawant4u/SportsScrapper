@@ -14,7 +14,7 @@
 <h4 id="matchTitle"></h4>
 
 <!-- style="position: relative; height:100vh;" -->
-<div id="cricketOddsChartContainer" data-matchCode=${matchCode}></div>
+<div id="cricketOddsChartContainer" style="position: relative; height:70vh;" data-matchCode="${matchCode}"></div>
 
 </div>
 <tags:scripts />

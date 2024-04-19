@@ -1,6 +1,10 @@
 package com.devex.SportsScrapper.controller;
 
 import java.util.List;
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -28,7 +32,12 @@ public class ChartController
 	@ResponseBody
 	public List<CricketMatchOddsModel> getChart(@PathVariable String matchCode)
 	{
-		return iplMatchOddsRepository.findByMatchCode(matchCode);
+		List<CricketMatchOddsModel> data = iplMatchOddsRepository.findByMatchCode(matchCode);
+		
+		BiPredicate<String, String> lessThan3 = (t1b,t2b)-> Double.parseDouble(t1b) <=
+				5.0 && Double.parseDouble(t2b) <= 5.0;
+		
+		return data.stream().filter(d->lessThan3.test(d.getTeam1Back(), d.getTeam2Back())).collect(Collectors.toList());
 	}
 	
 	@RequestMapping("/view/{matchCode}")

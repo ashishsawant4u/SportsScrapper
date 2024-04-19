@@ -81,4 +81,15 @@ public class SportsUtils
    	 	
    	 	return false;
 	}
+	
+	public static boolean isInningsBreak(String innings,String overs)
+	{
+		String currentOver = overs.split("\\/")[0];
+   	 	if(innings.endsWith("1") && (currentOver.endsWith("19.6") || currentOver.endsWith("20.0")))
+   	 	{
+   	 		return true;
+   	 	}
+   	 	
+   	 	return false;
+	}
 }

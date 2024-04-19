@@ -2,6 +2,7 @@ package com.devex.SportsScrapper.controller;
 import static com.devex.SportsScrapper.common.SportsUtils.getMatchCode;
 import static com.devex.SportsScrapper.common.SportsUtils.isMatchTime;
 import static com.devex.SportsScrapper.common.SportsUtils.isOverComplete;
+import static com.devex.SportsScrapper.common.SportsUtils.isInningsBreak;
 import static com.devex.SportsScrapper.common.SportsUtils.isValidTeam;
 
 import java.time.Duration;
@@ -36,13 +37,6 @@ public class IceExchangeController
 	
 	@Resource(name = "sportsPropertiesService")
 	SportsPropertiesService sportsPropertiesService;
-	
-	//@PostConstruct
-	public void test()
-	{
-		System.out.println("isOverComplete "+isOverComplete(" 6.6/20 OV"));
-		System.out.println("isOverComplete "+isOverComplete(" 6.2/20 OV"));
-	}
 	
 	
 	//@PostConstruct
@@ -101,6 +95,13 @@ public class IceExchangeController
 		        	}
 		        }
 		        
+		        List<WebElement> oddsSection = driver.findElements(By.cssSelector(".rating"));
+		        
+		        if (!oddsSection.isEmpty() && oddsSection.stream().filter(d->d.getText().contains("Suspended")).findAny().isPresent())
+		        {
+		        	foundDesiredMatches = false;
+		        }
+		        
 		        if(foundDesiredMatches)
 		        {
 		        	log.info("redirected to "+driver.getCurrentUrl());
@@ -111,8 +112,6 @@ public class IceExchangeController
 			        while(isMatchTime())
 			        {
 			        	CricketMatchOddsModel matchModel = matchDetails(driver);
-			        	//wait for next ball then call again matchDetails
-			        	Thread.sleep(20000);
 			        	 
 			        	 if(isOverComplete(matchModel.getOvers()))
 			        	 {
@@ -123,6 +122,18 @@ public class IceExchangeController
 			        		Thread.sleep(20000);
 			        		inPlayMatches();
 			        	 }
+			        	 if(isInningsBreak(matchModel.getInnings(),matchModel.getOvers()))
+			        	 {
+			        		log.info("Innings Break "+matchModel.getInnings()+" -- "+matchModel.getOvers()+" starting new session...");
+			        		//start new browser session once over gets completed
+			        		driver.quit();
+			        		//wait for next over to start
+			        		Thread.sleep(900000);
+			        		inPlayMatches();
+			        	 }
+			        	 
+			        	//wait for next ball then call again matchDetails
+				        Thread.sleep(10000);
 			        	 
 			        }
 			        
@@ -142,9 +153,9 @@ public class IceExchangeController
 		
 		} catch (Exception e) {
 			log.info(e.getMessage());
-			log.info("something went wrong try again...");
+			log.info("something went wrong,closing browser...");
 			driver.quit();
-			inPlayMatches();
+			//inPlayMatches();
 		}
 	}
 	
@@ -238,20 +249,34 @@ public class IceExchangeController
 		    }
 		    matchModel.setLeague(sportsPropertiesService.getTeamsMappingAllProperties().get(matchModel.getTeam1Name()));
 		    
-		    saveIfNotExist(matchModel);
-		    
-		    return matchModel;
+		    return saveIfNotExist(matchModel);
 	}
 	
-	public void saveIfNotExist(CricketMatchOddsModel model)
+	public CricketMatchOddsModel saveIfNotExist(CricketMatchOddsModel model)
 	{
 		List<CricketMatchOddsModel> existing = iplMatchOddsRepository.findByMatchCodeAndInningsAndOvers(model.getMatchCode(), model.getInnings(), model.getOvers());
 		
-		if(existing.isEmpty())
+		if(existing.isEmpty() && validateModel(model))
 		{
 			log.info(model.toString());
 			iplMatchOddsRepository.save(model);
 		}
+		
+		return model;
+	}
+	
+	public boolean validateModel(CricketMatchOddsModel model)
+	{
+		//check if any of the fields are null if yes then return false
+		if(model.getInnings() == null || model.getOvers() == null || 
+		   model.getTeam1Name() == null || model.getTeam2Name() == null || 
+		   model.getTeam1Score() == null || model.getTeam2Score() == null || 
+		   model.getTeam1Back() == null || model.getTeam1Lay() == null ||
+		   model.getTeam2Back() == null || model.getTeam2Lay() == null || model.getLeague() == null)
+        {
+            return false;
+        }
+		return true;
 	}
 	
 	

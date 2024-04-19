@@ -102,7 +102,7 @@ function prepareOddsChart(oddsData)
 		//text: "Odds Graph"
 	},
 	axisX: {
-		valueFormatString: "hh:mm:ss",
+		valueFormatString: "hh:mm",
 		crosshair: {
 			enabled: true,
 			snapToDataPoint: true
@@ -117,7 +117,7 @@ function prepareOddsChart(oddsData)
 		}
 	},
 	toolTip: {
-		shared: true
+		shared: true,
 	},
 	legend: {
 		cursor: "pointer",
@@ -162,4 +162,5 @@ function prepareOddsChart(oddsData)
 	}*/]
 });
 chart.render();
+
 }
